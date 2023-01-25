@@ -1,11 +1,14 @@
 import React, { useState } from "react";
 import Add from "../img/addAvatar.png";
 import { createUserWithEmailAndPassword, updateProfile } from "firebase/auth";
-import { ref,  getDownloadURL, uploadBytesResumable} from "firebase/storage";
-import { doc, setDoc } from "firebase/firestore";
 import { auth, storage, db } from "../firebase";
+import { ref, getDownloadURL, uploadBytesResumable } from "firebase/storage";
+import { doc, setDoc } from "firebase/firestore";
+import { Link, useNavigate } from "react-router-dom";
 
 const Register = () => {
+  const navigate = useNavigate();
+
   const [error, setError] = useState(false);
 
   const handleSubmit = async (e) => {
@@ -16,12 +19,12 @@ const Register = () => {
     const file = e.target[3].files[0];
 
     try {
-      const res = await createUserWithEmailAndPassword(auth, email, password); 
-      const storageRef = ref(storage, displayName);
-      const uploadTask = uploadBytesResumable(storageRef, file)
+      const res = await createUserWithEmailAndPassword(auth, email, password);
+      const storageRef = ref(storage, file.name);
+      const uploadTask = uploadBytesResumable(storageRef, file);
 
       uploadTask.on(
-        (error) => {
+        (er) => {
           setError(true);
         },
         () => {
@@ -36,14 +39,14 @@ const Register = () => {
               email,
               photoURL: downloadURL,
             });
+            await setDoc(doc(db, "userChats", res.user.uid), {});
+            navigate("/");
           });
         }
       );
     } catch (err) {
       setError(true);
     }
-
- 
   };
 
   return (
@@ -61,9 +64,11 @@ const Register = () => {
             <span>Add an avatar</span>
           </label>
           <button>Sign up</button>
-          {error && <p>Something went wrong</p>}
+          {error && <p style={{ color: "red" }}>Something went wrong</p>}
         </form>
-        <p>Do you have ac account? Login</p>
+        <p>
+          Do you have ac account? <Link to="/login">Login</Link>
+        </p>
       </div>
     </div>
   );
